@@ -15,6 +15,7 @@
 ├── firmware/
 │   └── flight_controller/
 │       ├── README.md
+│       ├── fetch_open_source_fc.sh
 │       └── params/
 │           └── ardusub_example.params
 ├── ros2_ws/
@@ -52,23 +53,45 @@
 - 典型连接：主控机（ROS2）通过串口/UDP 连接飞控
 - 参数示例：提供了推进器布局、深度控制、失联保护的参数模板
 
+> 当前仓库中的飞控层默认提供参数与接口约束，并提供脚本一键拉取开源飞控（ArduPilot/ArduSub）源码，避免手工重复搭建。
+
 ### 2) ROS2 主控层（ros2_ws/src）
 
-包含三个逻辑组件：
+包含三个可运行组件：
 
-- **telemetry_bridge**：采集飞控数据并发布 `/auv/telemetry`
-- **depth_hold_controller**：订阅期望深度和当前深度，发布 `/auv/cmd/thrust_z`
-- **mission_manager**：任务状态机（IDLE/ARMED/MISSION/EMERGENCY），对外提供 `arm/disarm/start/stop/emergency` 接口
+- **telemetry_bridge**：支持 MAVLink 实时接入（`pymavlink`）并发布 `/auv/telemetry`，同时将 `/auv/cmd/thrust_z` 下发为 RC Override
+- **depth_hold_controller**：PID 深度闭环（Kp/Ki/Kd + 抗积分饱和 + deadband），发布 `/auv/cmd/thrust_z`
+- **mission_manager**：任务状态机（IDLE/ARMED/MISSION/EMERGENCY）+ 合法状态迁移校验，并发布事件 `/auv/mission/event`
+
+
+### 2.1 MAVLink 接入（可选依赖）
+
+如需连接真实飞控，请在 ROS2 环境中安装：
+
+```bash
+pip install pymavlink
+```
+
+默认连接地址为 `udp:127.0.0.1:14550`，可通过 ROS 参数 `mavlink_url` 覆盖。
 
 ### 3) 地面站层（ground_station）
 
 - 轻量命令行版本（可直接跑）
-- 可查看遥测（JSON 行）
-- 可发送控制指令到 ROS2 主控（当前以 HTTP stub 形式演示，可替换成 rosbridge/WebSocket）
+- 已与 ROS2 `api_bridge` 打通：可直接读取实时遥测、发送任务与深度命令
+- 默认通过 `http://127.0.0.1:8080` 与主控通信（可用 `--api-base` 覆盖）
 
 ## 快速开始
 
-### A. ROS2 侧（逻辑开发）
+### A. 飞控源码拉取（ArduPilot/ArduSub）
+
+```bash
+cd firmware/flight_controller
+bash fetch_open_source_fc.sh
+```
+
+拉取后源码位于 `firmware/flight_controller/ardupilot`。
+
+### B. ROS2 侧（逻辑开发）
 
 > 需要本机具备 ROS2 Humble/Iron 及 rclpy 环境。
 
@@ -77,16 +100,20 @@ cd ros2_ws
 colcon build
 source install/setup.bash
 ros2 launch auv_bringup auv_system.launch.py
+# 可选：覆盖参数文件
+# ros2 launch auv_bringup auv_system.launch.py params_file:=/path/to/auv_system.params.yaml
 ```
 
-### B. 地面站侧
+### C. 地面站侧
 
 ```bash
 cd ground_station
-python3 gcs_cli.py --help
+python3 gcs_cli.py telemetry
+python3 gcs_cli.py mission --cmd arm
+python3 gcs_cli.py depth --meters 2.5
 ```
 
-### C. 一键开发脚本
+### D. 一键开发脚本
 
 ```bash
 bash scripts/dev_run.sh
@@ -94,10 +121,9 @@ bash scripts/dev_run.sh
 
 ## 后续可扩展方向
 
-1. 将 `telemetry_bridge.py` 改为真实 MAVLink 接入（pymavlink/mavros2）。
-2. 用 EKF 融合 DVL/IMU/深度计，形成统一 `/odom`。
-3. 在 `mission_manager.py` 中加入航点、返航、失联上浮策略。
-4. 地面站改为 Web UI（FastAPI + Vue/React）并对接视频流。
+1. 用 EKF 融合 DVL/IMU/深度计，形成统一 `/odom`。
+2. 在 `mission_manager.py` 中加入航点、返航、失联上浮策略。
+3. 地面站改为 Web UI（FastAPI + Vue/React）并对接视频流。
 
 ## 开源参考建议
 
@@ -105,4 +131,3 @@ bash scripts/dev_run.sh
 - PX4 + ROS2
 - MAVLink / mavros / mavros2
 - QGroundControl
-

@@ -2,6 +2,21 @@
 
 本目录用于管理底层飞控配置与硬件映射。
 
+## 已集成的开源飞控来源
+
+仓库内提供了 `fetch_open_source_fc.sh`，用于将 ArduPilot（包含 ArduSub）直接克隆到：
+
+- `firmware/flight_controller/ardupilot`
+
+执行方式：
+
+```bash
+cd firmware/flight_controller
+bash fetch_open_source_fc.sh
+```
+
+> 说明：脚本会优先尝试 GitHub 源，失败后自动尝试镜像源。
+
 ## 建议硬件
 
 - 飞控：Pixhawk 4/6 系列

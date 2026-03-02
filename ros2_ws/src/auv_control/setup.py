@@ -11,6 +11,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
     ],
     install_requires=['setuptools'],
+    extras_require={'mavlink': ['pymavlink>=2.4.41']},
     zip_safe=True,
     maintainer='auv-dev',
     maintainer_email='dev@example.com',
