@@ -1,0 +1,12 @@
+builtin_interfaces/Time stamp
+float32 depth_m
+float32 battery_v
+float32 battery_a
+float32 roll_deg
+float32 pitch_deg
+float32 yaw_deg
+float32 vx_mps
+float32 vy_mps
+float32 vz_mps
+string mode
+bool armed
