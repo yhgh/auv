@@ -15,6 +15,7 @@
 ├── firmware/
 │   └── flight_controller/
 │       ├── README.md
+│       ├── fetch_open_source_fc.sh
 │       └── params/
 │           └── ardusub_example.params
 ├── ros2_ws/
@@ -52,7 +53,7 @@
 - 典型连接：主控机（ROS2）通过串口/UDP 连接飞控
 - 参数示例：提供了推进器布局、深度控制、失联保护的参数模板
 
-> 当前仓库中的飞控层定位是“配置与接口约束层”，不是从零实现姿态/深度/航向控制律。工程实践里通常直接复用 ArduSub/PX4 的成熟闭环能力，本仓库聚焦上层任务与系统集成。
+> 当前仓库中的飞控层默认提供参数与接口约束，并提供脚本一键拉取开源飞控（ArduPilot/ArduSub）源码，避免手工重复搭建。
 
 ### 2) ROS2 主控层（ros2_ws/src）
 
@@ -81,7 +82,18 @@ pip install pymavlink
 
 ## 快速开始
 
-### A. ROS2 侧（逻辑开发）
+### A. 飞控源码拉取（ArduPilot/ArduSub）
+
+```bash
+cd firmware/flight_controller
+bash fetch_open_source_fc.sh
+# 或指定网盘链接
+# bash fetch_open_source_fc.sh --archive-url "<YOUR_URL>"
+```
+
+拉取后源码位于 `firmware/flight_controller/ardupilot`。
+
+### B. ROS2 侧（逻辑开发）
 
 > 需要本机具备 ROS2 Humble/Iron 及 rclpy 环境。
 
@@ -94,7 +106,7 @@ ros2 launch auv_bringup auv_system.launch.py
 # ros2 launch auv_bringup auv_system.launch.py params_file:=/path/to/auv_system.params.yaml
 ```
 
-### B. 地面站侧
+### C. 地面站侧
 
 ```bash
 cd ground_station
@@ -103,7 +115,7 @@ python3 gcs_cli.py mission --cmd arm
 python3 gcs_cli.py depth --meters 2.5
 ```
 
-### C. 一键开发脚本
+### D. 一键开发脚本
 
 ```bash
 bash scripts/dev_run.sh
@@ -111,10 +123,9 @@ bash scripts/dev_run.sh
 
 ## 后续可扩展方向
 
-1. 将 `telemetry_bridge.py` 改为真实 MAVLink 接入（pymavlink/mavros2）。
-2. 用 EKF 融合 DVL/IMU/深度计，形成统一 `/odom`。
-3. 在 `mission_manager.py` 中加入航点、返航、失联上浮策略。
-4. 地面站改为 Web UI（FastAPI + Vue/React）并对接视频流。
+1. 用 EKF 融合 DVL/IMU/深度计，形成统一 `/odom`。
+2. 在 `mission_manager.py` 中加入航点、返航、失联上浮策略。
+3. 地面站改为 Web UI（FastAPI + Vue/React）并对接视频流。
 
 ## 开源参考建议
 
