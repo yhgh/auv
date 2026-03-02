@@ -87,6 +87,8 @@ pip install pymavlink
 ```bash
 cd firmware/flight_controller
 bash fetch_open_source_fc.sh
+# 或指定网盘链接
+# bash fetch_open_source_fc.sh --archive-url "<YOUR_URL>"
 ```
 
 拉取后源码位于 `firmware/flight_controller/ardupilot`。

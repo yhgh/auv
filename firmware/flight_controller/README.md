@@ -15,7 +15,17 @@ cd firmware/flight_controller
 bash fetch_open_source_fc.sh
 ```
 
-> 说明：脚本会优先尝试 GitHub 源，失败后自动尝试镜像源。
+也可指定你上传的网盘直链或本地压缩包：
+
+```bash
+# 指定网盘/直链
+bash fetch_open_source_fc.sh --archive-url "<YOUR_URL>"
+
+# 指定本地压缩包
+bash fetch_open_source_fc.sh --archive /path/to/ardupilot.tar.gz
+```
+
+> 说明：脚本默认先尝试下载 Google Drive 共享包（当前预置了你提供的链接），失败后自动回退到 GitHub/Gitee clone。
 
 ## 建议硬件
 
