@@ -1,0 +1,22 @@
+/**:
+  ros__parameters:
+    # telemetry_bridge
+    mavlink_url: "udp:127.0.0.1:14550"
+    sim_mode: false
+    mavlink_heartbeat_timeout_s: 8.0
+    throttle_rc_channel: 3
+    throttle_pwm_min: 1100
+    throttle_pwm_trim: 1500
+    throttle_pwm_max: 1900
+
+    # depth_hold_controller
+    kp: 45.0
+    ki: 6.0
+    kd: 18.0
+    max_cmd: 100.0
+    integral_limit: 15.0
+    depth_deadband_m: 0.03
+
+    # api_bridge
+    http_host: "127.0.0.1"
+    http_port: 8080

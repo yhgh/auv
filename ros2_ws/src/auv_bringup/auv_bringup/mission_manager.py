@@ -13,6 +13,26 @@ class MissionState(Enum):
     EMERGENCY = 'EMERGENCY'
 
 
+_ALLOWED_TRANSITIONS = {
+    MissionState.IDLE: {
+        'arm': MissionState.ARMED,
+        'emergency': MissionState.EMERGENCY,
+    },
+    MissionState.ARMED: {
+        'disarm': MissionState.IDLE,
+        'start': MissionState.MISSION,
+        'emergency': MissionState.EMERGENCY,
+    },
+    MissionState.MISSION: {
+        'stop': MissionState.ARMED,
+        'emergency': MissionState.EMERGENCY,
+    },
+    MissionState.EMERGENCY: {
+        'reset': MissionState.IDLE,
+    },
+}
+
+
 class MissionManager(Node):
     def __init__(self) -> None:
         super().__init__('mission_manager')
@@ -20,23 +40,26 @@ class MissionManager(Node):
 
         self.create_subscription(String, '/auv/mission/cmd', self.on_command, 10)
         self.pub_state = self.create_publisher(String, '/auv/mission/state', 10)
+        self.pub_event = self.create_publisher(String, '/auv/mission/event', 10)
         self.timer = self.create_timer(0.5, self.publish_state)
 
     def on_command(self, msg: String) -> None:
         cmd = msg.data.strip().lower()
-        transitions = {
-            'arm': MissionState.ARMED,
-            'disarm': MissionState.IDLE,
-            'start': MissionState.MISSION,
-            'stop': MissionState.ARMED,
-            'emergency': MissionState.EMERGENCY,
-            'reset': MissionState.IDLE,
-        }
-        if cmd in transitions:
-            self.state = transitions[cmd]
-            self.get_logger().info(f'mission command={cmd}, state={self.state.value}')
-        else:
-            self.get_logger().warning(f'unknown mission command={cmd}')
+        next_state = _ALLOWED_TRANSITIONS.get(self.state, {}).get(cmd)
+        if next_state is None:
+            self._publish_event(f'reject:{cmd}:from:{self.state.value}')
+            self.get_logger().warning(f'rejected mission command={cmd}, state={self.state.value}')
+            return
+
+        prev_state = self.state
+        self.state = next_state
+        self._publish_event(f'accept:{cmd}:{prev_state.value}->{self.state.value}')
+        self.get_logger().info(f'mission command={cmd}, {prev_state.value}->{self.state.value}')
+
+    def _publish_event(self, text: str) -> None:
+        msg = String()
+        msg.data = text
+        self.pub_event.publish(msg)
 
     def publish_state(self) -> None:
         msg = String()
